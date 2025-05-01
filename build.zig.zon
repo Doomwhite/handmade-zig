@@ -1,16 +1,11 @@
 .{
-    .name = .handmade_zig,
+    .name = "handmade-zig",
     .version = "0.0.1",
-    .minimum_zig_version = "0.14.0",
-    .fingerprint = 0x309e02702e3f459,
+    .minimum_zig_version = "0.13.0",
     .dependencies = .{
         .zigwin32 = .{
-            .url = "https://github.com/marlersoft/zigwin32/archive/e8739b32a33ce48a3286aba31918b26a9dfc6ef0.tar.gz",
-            .hash = "1220219ca4acfa5804ca39945f92554e93507b077c03605b7a4c1c0401f0c7121339",
-        },
-        .stb = .{
-            .url = "git+https://github.com/nothings/stb#f75e8d1cad7d90d72ef7a4661f1b994ef78b4e31",
-            .hash = "1220c4fe5a4c4ebec402f5cdef08bc264b56fb07f259107d2b01ba8d416d88624b50",
+            .url = "https://github.com/marlersoft/zigwin32/archive/8e780b4482955c66d1509575938252f5938ccfd4.tar.gz",
+            .hash = "12200c87006a41a3d51b8bf892ebe7aeb13444bf22add39640d1061df01d2caeb7ed",
         },
     },
     .paths = .{
