@@ -107,8 +107,8 @@ fn WinProc(
             std.log.info("WM_PAINT", .{});
             var paint: win32.PAINTSTRUCT = undefined;
 
-            const context: ?win32.HDC = win32.BeginPaint(window, &paint);
-            if (context != null) {
+            const deviceContext: ?win32.HDC = win32.BeginPaint(window, &paint);
+            if (deviceContext != null) {
                 const x = paint.rcPaint.left;
                 const y = paint.rcPaint.top;
                 const height = paint.rcPaint.bottom - paint.rcPaint.top;
@@ -116,7 +116,7 @@ fn WinProc(
                 const color = if (@rem(height, 2) == 0) win32.BLACKNESS else win32.WHITENESS;
 
                 _ = win32.PatBlt(
-                    context,
+                    deviceContext,
                     x,
                     y,
                     width,
@@ -124,6 +124,8 @@ fn WinProc(
                     color,
                 );
             }
+
+            _ = win32.EndPaint(window, &paint);
         },
         else => {
             result = win32.DefWindowProc(window, message, w_param, l_param);
