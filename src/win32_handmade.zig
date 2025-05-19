@@ -22,20 +22,26 @@ pub var running = true;
 pub fn resizeDIBSection(width: i32, height: i32) void {
     // TODO: bullet proof this
     // don't free first, free after, first if that fails
+    
+    if(bitmap_handle) |value| { 
+        win32.DeleteObject(value);
+    }
 
     bitmap_info = .{
         .bmiHeader = win32.BITMAPINFOHEADER {
-            .biSize = @as(@sizeOf(@TypeOf(bitmap_info.bmiHeader)), u32),
+            .biSize = @sizeOf(win32.BITMAPINFOHEADER),
             .biWidth = width,
             .biHeight = height,
             .biPlanes = 1,
             .biBitCount = 32,
-            .biCompression = @as(win32.BI_RGB, u32),
+            .biCompression = win32.BI_RGB,
+            .biSizeImage = 0,
             .biXPelsPerMeter = 0,
             .biYPelsPerMeter = 0,
             .biClrUsed = 0,
-            .biClrImportant = 0
-        }
+            .biClrImportant = 0,
+        },
+        .bmiColors = undefined
     };
 
     if(bitmap_device_context == null) {
