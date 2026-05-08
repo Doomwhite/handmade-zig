@@ -4,30 +4,40 @@ const builtin = @import("builtin");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const exe = b.addExecutable(.{
-        .name = "handmade-zig",
-        .root_source_file = b.path("src/win32_handmade.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
 
     // Build options.
     const build_options = b.addOptions();
     build_options.addOption(bool, "timing", b.option(bool, "timing", "print timing info to debug output") orelse false);
-    exe.root_module.addOptions("build_options", build_options);
 
-    // Add the win32 API wrapper.
-    const zigwin32 = b.dependency("zigwin32", .{}).module("zigwin32");
-    exe.root_module.addImport("win32", zigwin32);
+    // The win32 API wrapper.
+    const zigwin32 = b.dependency("zigwin32", .{}).module("win32");
+
+    const exe_module = b.createModule(.{
+        .root_source_file = b.path("src/win32_handmade.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe_module.addOptions("build_options", build_options);
+    exe_module.addImport("win32", zigwin32);
+
+    const exe = b.addExecutable(.{
+        .name = "handmade-zig",
+        .root_module = exe_module,
+    });
 
     b.installArtifact(exe);
 
     // Build the game library.
-    const lib_handmade = b.addSharedLibrary(.{
-        .name = "handmade",
+    const lib_module = b.createModule(.{
         .root_source_file = b.path("src/handmade.zig"),
         .target = target,
         .optimize = optimize,
+    });
+
+    const lib_handmade = b.addLibrary(.{
+        .name = "handmade",
+        .root_module = lib_module,
+        .linkage = .dynamic,
         .version = .{ .major = 0, .minor = 1, .patch = 0 },
     });
 

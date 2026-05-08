@@ -1,18 +1,12 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
-const win32 = struct {
-    usingnamespace @import("win32").zig;
-    usingnamespace @import("win32").system.diagnostics.debug;
-    usingnamespace @import("win32").foundation;
-    usingnamespace @import("win32").ui.windows_and_messaging;
-    usingnamespace @import("win32").graphics.gdi;
-};
+const win32 = @import("win32").everything;
 
 pub const UNICODE = true;
 
 pub var bitmap_info: ?win32.BITMAPINFO = null;
-pub var bitmap_memory: ?*?*anyopaque = null;
+pub var bitmap_memory: ?*anyopaque = null;
 pub var bitmap_handle: ?win32.HBITMAP = null;
 pub var bitmap_device_context: ?win32.HDC = null;
 
@@ -23,8 +17,8 @@ pub fn resizeDIBSection(width: i32, height: i32) void {
     // TODO: bullet proof this
     // don't free first, free after, first if that fails
     
-    if(bitmap_handle) |value| { 
-        win32.DeleteObject(value);
+    if(bitmap_handle) |value| {
+        _ = win32.DeleteObject(value);
     }
 
     bitmap_info = .{
@@ -45,10 +39,10 @@ pub fn resizeDIBSection(width: i32, height: i32) void {
     };
 
     if(bitmap_device_context == null) {
-        bitmap_device_context = win32.CreateCompatibleDC(0);
+        bitmap_device_context = win32.CreateCompatibleDC(null);
     }
 
-    win32.CreateDIBSection(device_context.?, &bitmap_info, .RGB_COLORS, &bitmap_memory, 0, 0,);
+    bitmap_handle = win32.CreateDIBSection(bitmap_device_context.?, &bitmap_info.?, .RGB_COLORS, &bitmap_memory, null, 0);
 }
 
 pub fn updateWindow(
@@ -58,7 +52,7 @@ pub fn updateWindow(
     width: i32,
     height: i32,
 ) void {
-    win32.StretchDIBits(device_context, x, y, width, height, x, y, width, height, lpBits: ?*const anyopaque, lpbmi: ?*const BITMAPINFO, .RGB_COLORS, win32.SRCCOPY,);
+    _ = win32.StretchDIBits(device_context, x, y, width, height, x, y, width, height, bitmap_memory, &bitmap_info.?, .RGB_COLORS, win32.SRCCOPY);
 }
 
 pub export fn wWinMain(
@@ -74,7 +68,7 @@ pub export fn wWinMain(
 
     // std.debug.print("{}", .{@sizeOf(win32.LRESULT)});
 
-    const window_class: win32.WNDCLASS = .{
+    const window_class: win32.WNDCLASSW = .{
         .style = .{
             .OWNDC = 1,
             .HREDRAW = 1,
@@ -93,7 +87,7 @@ pub export fn wWinMain(
     const reg_window = win32.RegisterClassW(&window_class);
     assert(reg_window != 0);
 
-    const window_handle: ?win32.HWND = win32.CreateWindowEx(
+    const window_handle: ?win32.HWND = win32.CreateWindowExW(
         .{},
         window_class.lpszClassName,
         win32.L("Handmade Hero"),
@@ -121,7 +115,7 @@ pub export fn wWinMain(
         win32.OutputDebugStringA("Handle message \n");
 
         var message: win32.MSG = undefined;
-        const message_result = win32.GetMessage(
+        const message_result = win32.GetMessageW(
             &message,
             null,
             0,
@@ -143,17 +137,16 @@ fn WinProc(
     message: u32,
     w_param: win32.WPARAM,
     l_param: win32.LPARAM,
-) callconv(.C) win32.LRESULT {
+) callconv(.c) win32.LRESULT {
     var result: win32.LRESULT = 0;
 
     switch (message) {
         win32.WM_SIZE => {
-            var client_rect: ?win32.RECT = undefined;
+            var client_rect: win32.RECT = undefined;
             _ = win32.GetClientRect(window, &client_rect);
-            assert(client_rect == null);
 
-            const height = client_rect.?.bottom - client_rect.?.top;
-            const width = client_rect.?.right - client_rect.?.left;
+            const height = client_rect.bottom - client_rect.top;
+            const width = client_rect.right - client_rect.left;
             resizeDIBSection(width, height);
             win32.OutputDebugStringA("WM_SIZE\n");
             std.log.info("WM_SIZE", .{});
@@ -177,8 +170,7 @@ fn WinProc(
                 const width = paint.rcPaint.right - paint.rcPaint.left;
 
                 updateWindow(
-                    device_context
-                    window,
+                    device_context,
                     x,
                     y,
                     width,
@@ -199,7 +191,7 @@ fn WinProc(
             _ = win32.EndPaint(window, &paint);
         },
         else => {
-            result = win32.DefWindowProc(window, message, w_param, l_param);
+            result = win32.DefWindowProcW(window, message, w_param, l_param);
         },
     }
 
